@@ -9,6 +9,11 @@ This app renders Lottie with **Skia's Skottie** module (via `canvaskit-wasm`),
 not the JS `lottie-web` runtime. Follow the rules below and
 verify the result.
 
+> This skill covers the *mechanics* — the JSON shape Skottie needs. For the
+> *craft* (timing, easing, choreography, Disney animation principles), see
+> LottieFiles' [motion-design skill](https://github.com/lottiefiles/motion-design-skill).
+> Its guidance is in milliseconds; convert to frames with `frames = ms / 1000 * fr`.
+
 ## Setting up the project
 
 If you don't already have the player project on this machine, scaffold a fresh
