@@ -144,19 +144,17 @@ export default function App() {
       </div>
 
       <div className="pointer-events-none absolute right-0 top-0 flex max-h-full flex-col p-4 sm:p-6">
-        <div className="overflow-y-auto">
-          <PropertiesPanel
-            slots={slots}
-            meta={controlsMeta}
-            onScalar={(id, v) => playerRef.current?.setScalarSlot(id, v)}
-            onColor={(id, rgba) => playerRef.current?.setColorSlot(id, rgba)}
-            onVec2={(id, xy) => playerRef.current?.setVec2Slot(id, xy)}
-            onText={(id, v) => playerRef.current?.setTextSlot(id, v)}
-            onExport={(values) =>
-              downloadConfiguredLottie(lottieJsonRef.current, slots, values)
-            }
-          />
-        </div>
+        <PropertiesPanel
+          slots={slots}
+          meta={controlsMeta}
+          onScalar={(id, v) => playerRef.current?.setScalarSlot(id, v)}
+          onColor={(id, rgba) => playerRef.current?.setColorSlot(id, rgba)}
+          onVec2={(id, xy) => playerRef.current?.setVec2Slot(id, xy)}
+          onText={(id, v) => playerRef.current?.setTextSlot(id, v)}
+          onExport={(values) =>
+            downloadConfiguredLottie(lottieJsonRef.current, slots, values)
+          }
+        />
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center p-4 sm:p-6">

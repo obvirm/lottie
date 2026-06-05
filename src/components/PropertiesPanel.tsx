@@ -68,8 +68,6 @@ export function PropertiesPanel({
   // on first render and populate once the player loads.)
   const [edits, setEdits] = useState<Record<string, AnimationSlot["value"]>>({});
 
-  if (slots.length === 0) return null;
-
   const set = (id: string, value: AnimationSlot["value"]) =>
     setEdits((v) => ({ ...v, [id]: value }));
   const values = Object.fromEntries(
@@ -77,8 +75,8 @@ export function PropertiesPanel({
   );
 
   return (
-    <Card className="pointer-events-auto w-72 gap-0 py-3 backdrop-blur-md bg-neutral-900/90 border border-border/5 shadow-lg">
-      <CardContent className="flex flex-col gap-5 px-3">
+    <Card className="pointer-events-auto w-72 max-h-full overflow-hidden gap-0 py-3 backdrop-blur-md bg-neutral-900/90 border border-border/5 shadow-lg">
+      <CardContent className="flex min-h-0 flex-col gap-5 px-3">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium tracking-wide text-foreground">
             Properties
@@ -91,119 +89,121 @@ export function PropertiesPanel({
           </Button>
         </div>
 
-        <div className="flex flex-col gap-3">
-          {slots.map((slot) => {
-            const m = meta[slot.id];
-            const label = labelFor(slot, m);
+        {slots.length > 0 && (
+          <div className="flex min-h-0 flex-col gap-3 overflow-y-auto">
+            {slots.map((slot) => {
+              const m = meta[slot.id];
+              const label = labelFor(slot, m);
 
-            if (slot.type === "scalar") {
-              const value = values[slot.id] as number;
-              const min = m?.min ?? 0;
-              const max = m?.max ?? 100;
-              const step = m?.step ?? ((max - min) / 100 || 1);
-              // Show enough decimals to reflect the step (e.g. 0.01 → 2).
-              const decimals = Math.min(
-                4,
-                Math.max(0, -Math.floor(Math.log10(step)))
-              );
-              return (
-                <Scrubber
-                  key={slot.id}
-                  label={label}
-                  value={value}
-                  min={min}
-                  max={max}
-                  step={step}
-                  decimals={decimals}
-                  onValueChange={(v) => {
-                    set(slot.id, v);
-                    onScalar(slot.id, v);
-                  }}
-                />
-              );
-            }
+              if (slot.type === "scalar") {
+                const value = values[slot.id] as number;
+                const min = m?.min ?? 0;
+                const max = m?.max ?? 100;
+                const step = m?.step ?? ((max - min) / 100 || 1);
+                // Show enough decimals to reflect the step (e.g. 0.01 → 2).
+                const decimals = Math.min(
+                  4,
+                  Math.max(0, -Math.floor(Math.log10(step)))
+                );
+                return (
+                  <Scrubber
+                    key={slot.id}
+                    label={label}
+                    value={value}
+                    min={min}
+                    max={max}
+                    step={step}
+                    decimals={decimals}
+                    onValueChange={(v) => {
+                      set(slot.id, v);
+                      onScalar(slot.id, v);
+                    }}
+                  />
+                );
+              }
 
-            if (slot.type === "color") {
-              const value = values[slot.id] as [number, number, number, number];
-              const hex = rgbToHex(value);
-              // Label column on the left (plain text), then a field holding the
-              // swatch and its hex. The native picker is overlaid transparently
-              // so the whole field opens it.
-              return (
-                <div key={slot.id} className={ROW}>
-                  <span className={LABEL}>{label}</span>
-                  <label className="relative flex h-[34px] flex-1 cursor-pointer select-none items-center gap-2 overflow-hidden rounded-md bg-accent/70 pl-[6px]">
-                    <span
-                      className="size-[22px] shrink-0 rounded-[4px]"
-                      style={{ backgroundColor: hex }}
-                    />
-                    <span className="font-mono text-xs uppercase text-foreground">
-                      {hex}
-                    </span>
-                    <input
-                      type="color"
-                      value={hex}
-                      onChange={(e) => {
-                        const [r, g, b] = hexToRgb(e.target.value);
-                        const rgba: [number, number, number, number] = [r, g, b, value[3]];
-                        set(slot.id, rgba);
-                        onColor(slot.id, rgba);
-                      }}
-                      className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                      aria-label={label}
-                    />
-                  </label>
-                </div>
-              );
-            }
-
-            if (slot.type === "vec2") {
-              const value = values[slot.id] as [number, number];
-              const update = (i: 0 | 1, n: number) => {
-                const next: [number, number] = i === 0 ? [n, value[1]] : [value[0], n];
-                set(slot.id, next);
-                onVec2(slot.id, next);
-              };
-              return (
-                <div key={slot.id} className={ROW}>
-                  <span className={LABEL}>{label}</span>
-                  <div className="flex flex-1 gap-2">
-                    {([0, 1] as const).map((i) => (
-                      <input
-                        key={i}
-                        type="number"
-                        step={m?.step ?? 1}
-                        value={value[i]}
-                        onChange={(e) => update(i, Number(e.target.value))}
-                        className={`${FIELD} w-0 flex-1 font-mono [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none`}
-                        style={{ fontVariantNumeric: "tabular-nums" }}
-                        aria-label={`${label} ${i === 0 ? "x" : "y"}`}
+              if (slot.type === "color") {
+                const value = values[slot.id] as [number, number, number, number];
+                const hex = rgbToHex(value);
+                // Label column on the left (plain text), then a field holding the
+                // swatch and its hex. The native picker is overlaid transparently
+                // so the whole field opens it.
+                return (
+                  <div key={slot.id} className={ROW}>
+                    <span className={LABEL}>{label}</span>
+                    <label className="relative flex h-[34px] flex-1 cursor-pointer select-none items-center gap-2 overflow-hidden rounded-md bg-accent/70 pl-[6px]">
+                      <span
+                        className="size-[22px] shrink-0 rounded-[4px]"
+                        style={{ backgroundColor: hex }}
                       />
-                    ))}
+                      <span className="font-mono text-xs uppercase text-foreground">
+                        {hex}
+                      </span>
+                      <input
+                        type="color"
+                        value={hex}
+                        onChange={(e) => {
+                          const [r, g, b] = hexToRgb(e.target.value);
+                          const rgba: [number, number, number, number] = [r, g, b, value[3]];
+                          set(slot.id, rgba);
+                          onColor(slot.id, rgba);
+                        }}
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        aria-label={label}
+                      />
+                    </label>
                   </div>
+                );
+              }
+
+              if (slot.type === "vec2") {
+                const value = values[slot.id] as [number, number];
+                const update = (i: 0 | 1, n: number) => {
+                  const next: [number, number] = i === 0 ? [n, value[1]] : [value[0], n];
+                  set(slot.id, next);
+                  onVec2(slot.id, next);
+                };
+                return (
+                  <div key={slot.id} className={ROW}>
+                    <span className={LABEL}>{label}</span>
+                    <div className="flex flex-1 gap-2">
+                      {([0, 1] as const).map((i) => (
+                        <input
+                          key={i}
+                          type="number"
+                          step={m?.step ?? 1}
+                          value={value[i]}
+                          onChange={(e) => update(i, Number(e.target.value))}
+                          className={`${FIELD} w-0 flex-1 font-mono [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none`}
+                          style={{ fontVariantNumeric: "tabular-nums" }}
+                          aria-label={`${label} ${i === 0 ? "x" : "y"}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+              // text
+              const value = values[slot.id] as string;
+              return (
+                <div key={slot.id} className={ROW}>
+                  <span className={LABEL}>{label}</span>
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => {
+                      set(slot.id, e.target.value);
+                      onText(slot.id, e.target.value);
+                    }}
+                    className={`${FIELD} min-w-0 flex-1`}
+                    aria-label={label}
+                  />
                 </div>
               );
-            }
-
-            // text
-            const value = values[slot.id] as string;
-            return (
-              <div key={slot.id} className={ROW}>
-                <span className={LABEL}>{label}</span>
-                <input
-                  type="text"
-                  value={value}
-                  onChange={(e) => {
-                    set(slot.id, e.target.value);
-                    onText(slot.id, e.target.value);
-                  }}
-                  className={`${FIELD} min-w-0 flex-1`}
-                  aria-label={label}
-                />
-              </div>
-            );
-          })}
-        </div>
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
