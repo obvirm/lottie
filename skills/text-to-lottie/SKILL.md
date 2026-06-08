@@ -21,8 +21,13 @@ and the animation should be previewable in the browser. If the player project is
 missing, create it; if it exists, install/update dependencies as needed, start
 the dev server, and open the local preview URL for verification.
 
-If you don't already have the player project on this machine, scaffold a fresh
-copy with **degit**:
+**Always use the official GitHub player project — never hand-roll a custom
+viewer.** This skill's JSON rules (slots, the properties panel, the `?frame=`
+URL controls, the Skottie wasm wiring) only hold inside that exact project. Do
+**not** build your own HTML page, swap in `lottie-web`, or scaffold a bespoke
+canvas setup — any of those will silently diverge from how this player renders
+and the verification steps below won't apply. If the player project isn't
+already on this machine, scaffold a fresh copy of the repo with **degit**:
 
 ```bash
 npx degit diffusionstudio/lottie my-animation
@@ -217,6 +222,42 @@ The app discovers slots automatically via Skottie's `getSlotInfo()` — you do
 **not** list them anywhere else for them to work. The panel appears as soon as
 the animation declares at least one slot.
 
+### Required: a background-color control on every animation
+
+**Every animation you produce must expose at least one control for the
+background color.** The player does not paint a composition background of its
+own, so add a full-composition background layer as the **last** entry in
+`layers` (so it renders underneath everything), fill it with a slotted color,
+and label that slot in `controls.json`. Use a rectangle the size of the
+composition:
+
+```jsonc
+// last layer in `layers`:
+{
+  "ty": 4, "nm": "background", "ip": 0, "op": 120, "st": 0,
+  "ks": { "o": { "a": 0, "k": 100 }, "p": { "a": 0, "k": [256, 256, 0] },
+          "a": { "a": 0, "k": [0, 0, 0] }, "s": { "a": 0, "k": [100, 100, 100] },
+          "r": { "a": 0, "k": 0 } },
+  "shapes": [
+    { "ty": "gr", "it": [
+      { "ty": "rc", "p": { "a": 0, "k": [256, 256] },
+        "s": { "a": 0, "k": [512, 512] }, "r": { "a": 0, "k": 0 } },
+      { "ty": "fl", "c": { "sid": "bgColor" }, "o": { "a": 0, "k": 100 } },
+      { "ty": "tr", "p": { "a": 0, "k": [0, 0] }, "a": { "a": 0, "k": [0, 0] },
+        "s": { "a": 0, "k": [100, 100] }, "r": { "a": 0, "k": 0 },
+        "o": { "a": 0, "k": 100 } }
+    ] }
+}
+```
+
+```jsonc
+// slots:    "bgColor": { "p": { "a": 0, "k": [1, 1, 1, 1] } }   // default white
+// controls: { "sid": "bgColor", "label": "Background color" }
+```
+
+Match the rectangle's `p`/`s` to your composition's `w`×`h`. This is in addition
+to whatever other controls the animation exposes.
+
 **2. (Optional) Describe presentation in `public/controls.json`.** Slots only
 expose an ID and type, not a label or a sensible slider range. The sidecar file
 adds that. It is optional — missing entries fall back to the slot ID and a
@@ -270,9 +311,14 @@ on-screen error).
 3. Top-level `op` and each layer's `op` cover the frames you animate.
 4. Colors are 0–1 RGBA; positions/sizes are within the `w`×`h` composition.
 5. Keyframe `s` values are arrays; loops repeat the first value at the end.
-6. If the dev server is running, just save — it hot-reloads. Otherwise start it
+6. A background-color control is present: a full-composition background layer
+   (last in `layers`) with a slotted fill (e.g. `bgColor`) and a matching
+   `controls.json` label.
+7. The project is the official GitHub player (scaffolded via degit), not a
+   custom/hand-rolled viewer.
+8. If the dev server is running, just save — it hot-reloads. Otherwise start it
    with `npm run dev`. A blank canvas (no error) → re-check the group wrapping.
-7. The player is running and the preview URL has been opened or reported. When a
+9. The player is running and the preview URL has been opened or reported. When a
    browser tool is available, verify the page shows a nonblank rendered
    animation before finalizing — pin a key frame via the URL (see "Controlling
    playback from a browser agent"), e.g. open `?frame=60&paused=1` and
