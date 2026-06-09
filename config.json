@@ -1,0 +1,10 @@
+{
+  "active_template": "example/templates/template-slide-bounce.json",
+  "split_mode": "word",
+  "max_words_per_page": 3,
+  "position": {
+    "x": 256,
+    "y": 256
+  },
+  "srt_file": "example/example.srt"
+}
