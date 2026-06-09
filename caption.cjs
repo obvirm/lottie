@@ -298,83 +298,76 @@ groups.forEach((group) => {
     finalLayers.push(textLayer);
 
     if (shapePatterns.length > 0) {
-      const spIdx = globalElementIdx % shapePatterns.length;
-      const srcShape = shapePatterns[spIdx];
+      shapePatterns.forEach(function(srcShape, shapeIdx) {
+        const shapeLayer = clone(srcShape);
+        shapeLayer.nm = "Box " + globalElementIdx + "-" + shapeIdx + " - " + el.text;
+        shapeLayer.ip = el.startFrame;
+        shapeLayer.op = el.endFrame;
+        shapeLayer.st = el.startFrame;
 
-      const shapeLayer = clone(srcShape);
-      shapeLayer.nm = "Box " + globalElementIdx + " - " + el.text;
-      shapeLayer.ip = el.startFrame;
-      shapeLayer.op = el.endFrame;
-      shapeLayer.st = el.startFrame;
+        shapeLayer.ks = remapTransform(srcShape.ks, el.startFrame, el.endFrame);
 
-      shapeLayer.ks = remapTransform(srcShape.ks, el.startFrame, el.endFrame);
-
-      if (shapeLayer.ks.p.a === 0) {
-        shapeLayer.ks.p.k = [el.centerX, baseY, 0];
-      } else {
-        const tplCenterX = CANVAS_W / 2;
-        const tplCenterY = CANVAS_H / 2;
-        shapeLayer.ks.p.k = shapeLayer.ks.p.k.map((kf) => {
-          const n = clone(kf);
-          if (Array.isArray(kf.s)) {
-            n.s = [
-              kf.s[0] - tplCenterX + el.centerX,
-              kf.s[1] - tplCenterY + baseY,
-              kf.s[2] || 0,
-            ];
-          }
-          return n;
-        });
-      }
-
-      if (
-        shapeLayer.shapes &&
-        shapeLayer.shapes[0] &&
-        shapeLayer.shapes[0].it
-      ) {
-        shapeLayer.shapes[0].it = remapShapeItems(
-          srcShape.shapes[0].it,
-          el.startFrame,
-          el.endFrame,
-        );
-
-        shapeLayer.shapes[0].it.forEach((item) => {
-          if (item.ty === "rc" && item.s && item.s.a === 0) {
-            item.s.k = [el.boxWidth, BOX_HEIGHT];
-          }
-        });
-
-        // color: config overrides template palette, which overrides template slot
-        var colorPalette = null;
-        var textPalette = null;
-        if (config.colors) {
-          colorPalette = config.colors.box || null;
-          textPalette = config.colors.text || null;
-        }
-        if (!colorPalette && template._colors && template._colors.box) {
-          colorPalette = template._colors.box;
-        }
-        if (!textPalette && template._colors && template._colors.text) {
-          textPalette = template._colors.text;
-        }
-        // box color
-        if (colorPalette && colorPalette.length > 0) {
-          const color = colorPalette[ei % colorPalette.length];
-          shapeLayer.shapes[0].it.forEach((item) => {
-            if (item.ty === "fl" && item.c) {
-              item.c.k = color;
-              delete item.c.sid;
+        if (shapeLayer.ks.p.a === 0) {
+          var shapeOffsetX = 0, shapeOffsetY = 0;
+          if (shapeIdx > 0 && shapePatterns.length > 0) {
+            var refShape = shapePatterns[0];
+            if (refShape.ks.p.a === 0) {
+              shapeOffsetX = srcShape.ks.p.k[0] - refShape.ks.p.k[0];
+              shapeOffsetY = srcShape.ks.p.k[1] - refShape.ks.p.k[1];
             }
+          }
+          shapeLayer.ks.p.k = [el.centerX + shapeOffsetX, baseY + shapeOffsetY, 0];
+        } else {
+          const tplCenterX = CANVAS_W / 2;
+          const tplCenterY = CANVAS_H / 2;
+          shapeLayer.ks.p.k = shapeLayer.ks.p.k.map((kf) => {
+            const n = clone(kf);
+            if (Array.isArray(kf.s)) {
+              n.s = [
+                kf.s[0] - tplCenterX + el.centerX,
+                kf.s[1] - tplCenterY + baseY,
+                kf.s[2] || 0,
+              ];
+            }
+            return n;
           });
         }
-        // text color
-        if (textPalette && textPalette.length > 0) {
-          const color = textPalette[ei % textPalette.length];
-          textLayer.t.d.k[0].s.fc = color;
-        }
-      }
 
-      finalLayers.push(shapeLayer);
+        if (shapeLayer.shapes && shapeLayer.shapes[0] && shapeLayer.shapes[0].it) {
+          shapeLayer.shapes[0].it = remapShapeItems(
+            srcShape.shapes[0].it,
+            el.startFrame,
+            el.endFrame
+          );
+
+          shapeLayer.shapes[0].it.forEach((item) => {
+            if (item.ty === "rc" && item.s && item.s.a === 0) {
+              item.s.k = [el.boxWidth, BOX_HEIGHT];
+            }
+          });
+
+          if (shapeIdx === 0) {
+            var colorPalette = null;
+            if (config.colors) {
+              colorPalette = config.colors.box || null;
+            }
+            if (!colorPalette && template._colors && template._colors.box) {
+              colorPalette = template._colors.box;
+            }
+            if (colorPalette && colorPalette.length > 0) {
+              const color = colorPalette[ei % colorPalette.length];
+              shapeLayer.shapes[0].it.forEach((item) => {
+                if (item.ty === "fl" && item.c) {
+                  item.c.k = color;
+                  delete item.c.sid;
+                }
+              });
+            }
+          }
+        }
+
+        finalLayers.push(shapeLayer);
+      });
     }
 
     globalElementIdx++;

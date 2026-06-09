@@ -1,7 +1,7 @@
 {
-  "active_template": "example/templates/template-slide-bounce.json",
+  "active_template": "example/templates/style-highlight.json",
   "split_mode": "word",
-  "max_words_per_page": 3,
+  "max_words_per_page": 2,
   "position": {
     "x": 256,
     "y": 256
