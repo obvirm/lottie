@@ -246,6 +246,15 @@ groups.forEach((group) => {
   const groupStart = group[0].startFrame;
   const groupEnd = group[group.length - 1].endFrame;
 
+  // In overlap mode, all words share group ip/op but animation shifts per position
+  if (config.overlap) {
+    const groupDur = groupEnd - groupStart;
+    group.forEach(function(w, pos) {
+      w.startFrame = groupStart + Math.floor((groupDur / group.length) * pos);
+      w.endFrame = groupEnd;
+    });
+  }
+
   group.forEach((el) => {
     el.width = estimateWordWidth(el.text);
   });
@@ -399,3 +408,27 @@ fs.writeFileSync("public/lottie.json", JSON.stringify(template, null, 2));
 
 console.log("  " + config.active_template + " | " + allElements.length + " words | " + maxFrame + " frames (" + (maxFrame/FPS).toFixed(2) + "s)");
 console.log("");
+if (!process.argv.includes("--once")) {
+  // Watch mode -- auto re-run when files change
+  console.log("  watching...");
+  const watchFiles = ["config.json", "dummy.srt"];
+  let timer = null;
+  let busy = false;
+  
+  function reRun() {
+    if (busy) return;
+    busy = true;
+    const { spawn } = require("child_process");
+    const p = spawn(process.argv[0], [__filename, "--once"], { stdio: "inherit", cwd: __dirname });
+    p.on("close", () => { busy = false; });
+    p.on("error", () => { busy = false; });
+  }
+  
+  watchFiles.forEach(f => {
+    try { fs.watch(f, () => { clearTimeout(timer); timer = setTimeout(reRun, 300); }); } catch(e) {}
+  });
+  
+  try { fs.watch(path.join(__dirname, "templates"), (e, f) => { if(f && f.endsWith(".json")) { clearTimeout(timer); timer = setTimeout(reRun, 300); }}); } catch(e) {}
+  try { fs.watch(path.join(__dirname, "example", "templates"), (e, f) => { if(f && f.endsWith(".json")) { clearTimeout(timer); timer = setTimeout(reRun, 300); }}); } catch(e) {}
+  try { fs.watch(__dirname, (e, f) => { if(f && f.endsWith(".srt")) { clearTimeout(timer); timer = setTimeout(reRun, 300); }}); } catch(e) {}
+}

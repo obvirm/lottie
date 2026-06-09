@@ -6,5 +6,6 @@
     "x": 256,
     "y": 256
   },
-  "srt_file": "example/example.srt"
+  "srt_file": "example/example.srt",
+  "overlap": true
 }
